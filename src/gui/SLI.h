@@ -1,7 +1,7 @@
 #pragma once
 #include "PAG.h"
 #include <M5EPD.h>
-#include "RPC.h"
+#include "../rpc/RPC.h"
 #include <ArduinoJson.h>
 /**
  * Slider Page implementation

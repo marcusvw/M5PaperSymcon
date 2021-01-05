@@ -1,0 +1,6 @@
+[submodule "src/rpc"]
+	path = src/rpc
+	url = git@github.com:marcusvw/ArdSymconRPCHelper.git
+[submodule "src/wif"]
+	path = src/wif
+	url = git@github.com:marcusvw/ArdWifiHelper.git

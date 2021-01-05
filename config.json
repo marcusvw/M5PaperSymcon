@@ -1,6 +1,7 @@
 {
     "version": 2,
     "sleepTimeout": 15000,
+    "hostname":"M5Paper1",
     "imagesrv": "http://192.168.88.6:3777/user/image/",
     "elements": [
         {

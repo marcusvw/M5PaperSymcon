@@ -1,10 +1,13 @@
+
+
 #include <M5EPD.h>
-#include "WIF.h"
+#include "src/wif/WIF.h"
 #include <Preferences.h>
-#include "SLI.h"
+#include "src/gui/GUI.h"
 #include <ArduinoJson.h>
-#include "RPC.h"
-#include "GUI.h"
+#include "src/rpc/RPC.h"
+
+
 
 M5EPD_Canvas canvas(&M5.EPD);
 char temStr[10];
@@ -18,7 +21,6 @@ void setup()
 
   /**Initialize M5Stack stuff*/
   M5.begin();
-  M5.SHT30.Begin();
   M5.EPD.SetRotation(0);
   M5.EPD.Clear(true);
   canvas.createCanvas(400, 300);

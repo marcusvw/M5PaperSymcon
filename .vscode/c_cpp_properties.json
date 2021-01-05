@@ -3,6 +3,7 @@
         {
             "name": "Win32",
             "includePath": [
+                "C:\\Users\\marcu\\AppData\\Local\\Arduino15\\packages\\m5stack\\hardware\\esp32\\1.0.6\\libraries\\ArduinoOTA\\src",
                 "C:\\Users\\marcu\\AppData\\Local\\Arduino15\\packages\\m5stack\\tools\\**",
                 "C:\\Users\\marcu\\Documents\\Arduino\\libraries\\**",
                 "C:\\Program Files (x86)\\Arduino\\libraries\\**",

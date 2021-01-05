@@ -1,16 +1,16 @@
 #include "PAG.h"
-#include "RPC.h"
+#include "../rpc/RPC.h"
+#include "../ddh/DDH.h"
 #include "SLI.h"
 #include <ArduinoJson.h>
 #include "GUI.h"
-#include <HTTPClient.h>
 #include <M5EPD.h>
 #include <Preferences.h>
-#include "WIF.h"
+#include "../wif/WIF.h"
 #include "BT4.h"
 static Page *pages[NUM_PAGES_MAX];
 static uint8_t pageCount = 0;
-static uint8_t currentPage = 0;
+static uint8_t currentChapter = 0;
 static bool t1 = false;
 static bool t2 = false;
 static bool t3 = false;
@@ -27,6 +27,7 @@ Preferences GUI__preferences;
 GUI_pos_t pos;
 void GUI_Init()
 {
+    String hostname;
     String config = JsonRPC::init();
     DynamicJsonDocument doc(20000);
     DeserializationError error = deserializeJson(doc, config);
@@ -47,6 +48,7 @@ void GUI_Init()
      ***/
     imgServer = doc["imagesrv"].as<String>();
     confVers = doc["version"].as<uint32_t>();
+    hostname = doc["hostname"].as<uint32_t>();
     sleepTimeout = doc["sleepTimeout"].as<uint32_t>();
     /**
      * Try to get last config version to check if image files should be re-downloaded
@@ -59,6 +61,7 @@ void GUI_Init()
         Serial.printf("GUI INF New config version found refreshing images old:%d, new:%d\r\n", lastVersion, confVers);
         forceDownload = true;
     }
+    DDH_Init(imgServer,forceDownload, true, 0, hostname);
     /**
      * Iterate through elements in config file
      ***/
@@ -117,10 +120,11 @@ void GUI_Init()
             pages[x]->activate();
         }
     }
-    //GUI__header(pages[currentPage]->getHeader().c_str());
     pos.x = -1;
     pos.y = -1;
 }
+
+
 
 void GUI_Loop()
 {
@@ -157,19 +161,15 @@ void GUI_Loop()
                 tp_finger_t FingerItem = M5.TP.readFinger(0);
                 pos.x = FingerItem.x;
                 pos.y = FingerItem.y;
-            }
-            Serial.printf("GUI INF Touch: %d, %d\r\n", pos.x, pos.y);
-            if (GUI__checkButtons(pos))
-            {
                 lastActive = millis();
             }
+            Serial.printf("GUI INF Touch: %d, %d\r\n", pos.x, pos.y);
         }
         else
         {
             pos.x = -1;
             pos.y = -1;
             Serial.printf("GUI INF Touch released\r\n");
-            GUI__checkButtons(pos);
         }
 
         /**
@@ -187,11 +187,9 @@ void GUI_Loop()
         {
             pos.x = -1;
             pos.y = -1;
-            //Serial.printf("GUI INF Touch released2\r\n");
-            GUI__checkButtons(pos);
         }
     }
-    for (int x=0; x < NUM_PAGES; x++)
+    for (int x = 0; x < NUM_PAGES; x++)
     {
         if (pages[x] != NULL)
         {
@@ -203,55 +201,24 @@ void GUI_Loop()
             }
             else
             {
-                if ((pos.x>=positionTemplate[x].x)&&(pos.x<(positionTemplate[x].x+PAGE_WIDTH))&&
-                    (pos.y>=positionTemplate[x].y)&&(pos.y<(positionTemplate[x].y+PAGE_HEIGHT)))
+                if ((pos.x >= positionTemplate[x].x) && (pos.x < (positionTemplate[x].x + PAGE_WIDTH)) &&
+                    (pos.y >= positionTemplate[x].y) && (pos.y < (positionTemplate[x].y + PAGE_HEIGHT)))
                 {
-                    GUI_pos_t locPos=pos;
-                    locPos.x-=positionTemplate[x].x;
-                    locPos.y-=positionTemplate[x].y;
+                    Serial.printf("GUI INF Selected Page %d in Chapter %d", x, currentChapter);
+                    GUI_pos_t locPos = pos;
+                    locPos.x -= positionTemplate[x].x;
+                    locPos.y -= positionTemplate[x].y;
                     pages[x]->handleInput(locPos);
                 }
                 else
                 {
                     pages[x]->handleInput(dummyPos);
                 }
-                
             }
         }
     }
-    #if 0
-    if (pos.x != -1)
-    {
-        if (pos.x < 320)
-        {
-            pages[currentPage]->handleInput(pos);
-            pages[currentPage + 1]->handleInput(dummyPos);
-            pages[currentPage + 2]->handleInput(dummyPos);
-        }
-        else if ((pos.x > 320) && (pos.x < 640))
-        {
-            GUI_pos_t locPos = pos;
-            locPos.x -= 320;
-            pages[currentPage]->handleInput(dummyPos);
-            pages[currentPage + 1]->handleInput(locPos);
-            pages[currentPage + 2]->handleInput(dummyPos);
-        }
-        else if (pos.x > 640)
-        {
-            GUI_pos_t locPos = pos;
-            locPos.x -= 640;
-            pages[currentPage]->handleInput(dummyPos);
-            pages[currentPage + 1]->handleInput(dummyPos);
-            pages[currentPage + 2]->handleInput(locPos);
-        }
-    }
-    else
-    {
-        pages[currentPage]->handleInput(pos);
-        pages[currentPage + 1]->handleInput(pos);
-        pages[currentPage + 2]->handleInput(pos);
-    }
-    #endif
+    GUI__checkButtons();
+    DDH__Loop();
 }
 
 /**
@@ -281,127 +248,21 @@ bool GUI__isInArea(int xT, int yT, int x, int y, int sizeX, int sizeY)
  * Function to check the state of the 3 virtual touch buttons
  * returns true if any touch is detected.
  * **/
-bool GUI__checkButtons(GUI_pos_t pos)
+bool GUI__checkButtons()
 {
-    bool touchActive = false;
-    touchActive = (pos.x != -1);
-    if (touchActive)
+    if (M5.BtnL.wasPressed())
     {
-
-        if (GUI__isInArea(pos.x, pos.y, T1_X, T1_Y, SIZE_X, SIZE_Y))
-        {
-            if (t1 == false)
-            {
-                t1 = true;
-                pages[currentPage]->deActivate();
-                pages[currentPage + 1]->deActivate();
-                pages[currentPage + 2]->deActivate();
-                if (currentPage == 0)
-                {
-                    currentPage = pageCount - 1;
-                }
-                else
-                {
-                    currentPage--;
-                }
-                Serial.printf("GUI INF T1 Pos x %d, Pos y %d , Page: %d\r\n", pos.x, pos.y, currentPage);
-                pages[currentPage]->activate();
-                //GUI__header(pages[currentPage]->getHeader().c_str());
-            }
-        }
-        else
-        {
-            if (t1 == true)
-            {
-                t1 = false;
-            }
-        }
-
-        if (GUI__isInArea(pos.x, pos.y, T2_X, T2_Y, SIZE_X, SIZE_Y))
-        {
-            if (t2 == false)
-            {
-                t2 = true;
-                pages[currentPage]->middleButtonPushed();
-            }
-        }
-        else
-        {
-            if (t2 == true)
-            {
-                t2 = false;
-            }
-        }
-
-        if (GUI__isInArea(pos.x, pos.y, T3_X, T3_Y, SIZE_X, SIZE_Y))
-        {
-            if (t3 == false)
-            {
-                t3 = true;
-
-                pages[currentPage]->deActivate();
-                currentPage++;
-                if (currentPage >= pageCount)
-                {
-                    currentPage = 0;
-                }
-                Serial.printf("GUI INF T3 Pos x %d, Pos y %d , Page: %d\r\n", pos.x, pos.y, currentPage);
-                pages[currentPage]->activate();
-                //GUI__header(pages[currentPage]->getHeader().c_str());
-            }
-        }
-        else
-        {
-            if (t3 == true)
-            {
-                t3 = false;
-            }
-        }
+        Serial.printf("BtnL wasPressed!");
     }
-    else
+    if (M5.BtnR.wasPressed())
     {
-        t1 = false;
-        t2 = false;
-        t3 = false;
+        Serial.printf("BtnR wasPressed!");
     }
-
-    return (touchActive);
+    M5.update();
 }
 
-/**
- * Function checks if image is available and updtodate
- * if not it will download the image file from imgServer
- ***/
+
 bool GUI_CheckImage(String path)
 {
-    bool retVal = true;
-    if ((!SD.exists(path)) || (forceDownload))
-    {
-        if (SD.exists(path))
-        {
-            SD.remove(path);
-        }
-        //M5.Lcd.print("Downloading Image\r\n");
-        Serial.printf("GUI INF File: %s not found, downloading from %s", path.c_str(), imgServer.c_str());
-        File file = SD.open(path, "a");
-        HTTPClient http;
-
-        http.begin(imgServer + path); //Specify the URL and certificate
-        int httpCode = http.GET();    //Make the request
-
-        if (httpCode == HTTP_CODE_OK)
-        { //Check for the returning code
-            http.writeToStream(&file);
-        }
-        else
-        {
-            retVal = false;
-            Serial.printf("GUI ERR File: %s failed to download", path.c_str());
-            //M5.Lcd.print("Downloading Image failed\r\n");
-        }
-
-        file.close();
-        Serial.printf("GUI INF File: %s downloaded and stored", path.c_str());
-        http.end(); //Free the resources
-    }
+   DDH_CheckImage(path);
 }

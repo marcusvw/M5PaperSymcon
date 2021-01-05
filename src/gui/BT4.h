@@ -1,7 +1,7 @@
 #pragma once
 #include "PAG.h"
 #include <M5EPD.h>
-#include "RPC.h"
+#include "../rpc/RPC.h"
 #include <ArduinoJson.h>
 #define BT4_NUM_BUT 4
 class Button4Page : public Page

@@ -31,7 +31,7 @@ typedef struct
 bool GUI__isInArea(int xT, int yT,int x,int y, int sizeX, int sizeY);
 void GUI_Init();
 void GUI_Loop();
-bool GUI__checkButtons(GUI_pos_t pos);
+bool GUI__checkButtons();
 void GUI__header(const char *string);
 bool GUI_CheckImage(String path);
 
