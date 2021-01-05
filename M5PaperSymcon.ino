@@ -1,5 +1,3 @@
-
-
 #include <M5EPD.h>
 #include "src/wif/WIF.h"
 #include <Preferences.h>
