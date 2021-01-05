@@ -1,5 +1,5 @@
 #pragma once
-#include "GUI.h"
+#include <Arduino.h>
 #define OFFSET 5
 #define OFFSET_Y 40
 #define PAGE_PADDING_Y 20
@@ -21,12 +21,6 @@
 #define PAGE_WIDTH 320
 #define PAGE_HEIGHT 240
 #define NUM_PAGES_MAX 50
-typedef struct
-{
-    int16_t x;
-    int16_t y;
-} GUI_pos_t;
-
 
 bool GUI__isInArea(int xT, int yT,int x,int y, int sizeX, int sizeY);
 void GUI_Init();

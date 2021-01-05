@@ -1,13 +1,13 @@
-#include "PAG.h"
+#include "PAG/PAG.h"
 #include "../rpc/RPC.h"
 #include "../ddh/DDH.h"
-#include "SLI.h"
+#include "SLI/SLI.h"
 #include <ArduinoJson.h>
 #include "GUI.h"
 #include <M5EPD.h>
 #include <Preferences.h>
 #include "../wif/WIF.h"
-#include "BT4.h"
+#include "BT4/BT4.h"
 static Page *pages[NUM_PAGES_MAX];
 static uint8_t pageCount = 0;
 static uint8_t currentChapter = 0;
@@ -21,13 +21,14 @@ static String imgServer = "";
 static uint32_t confVers = 0;
 static uint32_t touchReleaseCounter = 0;
 static uint32_t notAvailableCounter = 0;
-GUI_pos_t dummyPos = {-1, -1};
-GUI_pos_t positionTemplate[NUM_PAGES] = {{PAGE_WIDTH * 0, (PAGE_HEIGHT * 0) + OFFSET_Y}, {PAGE_WIDTH * 1, (PAGE_HEIGHT * 0) + OFFSET_Y}, {PAGE_WIDTH * 2, (PAGE_HEIGHT * 0) + OFFSET_Y}, {PAGE_WIDTH * 0, (PAGE_HEIGHT * 1) + OFFSET_Y + PAGE_PADDING_Y}, {PAGE_WIDTH * 1, (PAGE_HEIGHT * 1) + OFFSET_Y + PAGE_PADDING_Y}, {PAGE_WIDTH * 2, (PAGE_HEIGHT * 1) + OFFSET_Y + PAGE_PADDING_Y}};
+PAG_pos_t dummyPos = {-1, -1};
+PAG_pos_t positionTemplate[NUM_PAGES] = {{PAGE_WIDTH * 0, (PAGE_HEIGHT * 0) + OFFSET_Y}, {PAGE_WIDTH * 1, (PAGE_HEIGHT * 0) + OFFSET_Y}, {PAGE_WIDTH * 2, (PAGE_HEIGHT * 0) + OFFSET_Y}, {PAGE_WIDTH * 0, (PAGE_HEIGHT * 1) + OFFSET_Y + PAGE_PADDING_Y}, {PAGE_WIDTH * 1, (PAGE_HEIGHT * 1) + OFFSET_Y + PAGE_PADDING_Y}, {PAGE_WIDTH * 2, (PAGE_HEIGHT * 1) + OFFSET_Y + PAGE_PADDING_Y}};
 Preferences GUI__preferences;
-GUI_pos_t pos;
+PAG_pos_t pos;
 void GUI_Init()
 {
     String hostname;
+    bool useSDCard=false;
     String config = JsonRPC::init();
     DynamicJsonDocument doc(20000);
     DeserializationError error = deserializeJson(doc, config);
@@ -48,8 +49,9 @@ void GUI_Init()
      ***/
     imgServer = doc["imagesrv"].as<String>();
     confVers = doc["version"].as<uint32_t>();
-    hostname = doc["hostname"].as<uint32_t>();
+    hostname = doc["hostname"].as<String>();
     sleepTimeout = doc["sleepTimeout"].as<uint32_t>();
+    useSDCard =doc["useSDCard"].as<boolean>();
     /**
      * Try to get last config version to check if image files should be re-downloaded
      * **/
@@ -61,7 +63,21 @@ void GUI_Init()
         Serial.printf("GUI INF New config version found refreshing images old:%d, new:%d\r\n", lastVersion, confVers);
         forceDownload = true;
     }
-    DDH_Init(imgServer,forceDownload, true, 0, hostname);
+    /**
+     * If new version was detected
+     * Save the new version number in the nv memory.
+     * As the page constructors are downloading the images the force download flag can be restetted
+     ****/
+    if (forceDownload)
+    {
+
+        forceDownload = false;
+        GUI__preferences.begin("GUI", false);
+        GUI__preferences.putUInt("CONFVER", confVers);
+        GUI__preferences.end();
+    }
+    DDH_Init(imgServer,forceDownload, useSDCard, 0, hostname);
+    WiFi.setHostname(hostname.c_str());
     /**
      * Iterate through elements in config file
      ***/
@@ -79,15 +95,14 @@ void GUI_Init()
         if (type == "SLI")
         {
             Serial.printf("GUI INF SLI Config: %s %s %s\r\n", doc["elements"][x]["image1"].as<String>().c_str(), doc["elements"][x]["id"].as<String>().c_str(), doc["elements"][x]["factor"].as<String>().c_str());
-            pages[pageCount] = new SliderPage((JsonObject)(doc["elements"][x]), positionTemplate[pageIndex]);
-
+            pages[pageCount] = new SliderPage((JsonObject)(doc["elements"][x]), positionTemplate[pageIndex],useSDCard);
             pageCount++;
         }
         // Type is 4 Button Page
         else if (type == "BT4")
         {
             Serial.printf("GUI INF B4T Config: %s \r\n", doc["elements"][x]["head"].as<String>().c_str());
-            pages[pageCount] = new Button4Page((JsonObject)(doc["elements"][x]), positionTemplate[pageIndex]);
+            pages[pageCount] = new Button4Page((JsonObject)(doc["elements"][x]), positionTemplate[pageIndex],useSDCard);
             pageCount++;
         }
         pageIndex++;
@@ -96,19 +111,7 @@ void GUI_Init()
             pageIndex = 0;
         }
     }
-    /**
-     * If new version was detected
-     * Save the new version number in the nv memory.
-     * As the page constructors are downloading the images the force download flag can be restetted
-     ****/
-    if (forceDownload)
-    {
-
-        forceDownload = false;
-        GUI__preferences.begin("GUI", false);
-        GUI__preferences.putUInt("CONFVER", confVers);
-        GUI__preferences.end();
-    }
+    
     /***
      * Activate page 0 and render header
      **/
@@ -205,7 +208,7 @@ void GUI_Loop()
                     (pos.y >= positionTemplate[x].y) && (pos.y < (positionTemplate[x].y + PAGE_HEIGHT)))
                 {
                     Serial.printf("GUI INF Selected Page %d in Chapter %d", x, currentChapter);
-                    GUI_pos_t locPos = pos;
+                    PAG_pos_t locPos = pos;
                     locPos.x -= positionTemplate[x].x;
                     locPos.y -= positionTemplate[x].y;
                     pages[x]->handleInput(locPos);
