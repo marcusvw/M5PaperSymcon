@@ -13,3 +13,6 @@
 [submodule "src/gui/SLI"]
 	path = src/gui/SLI
 	url = git@github.com:marcusvw/GUISLI
+[submodule "src/ddh"]
+	path = src/ddh
+	url = git@github.com:marcusvw/ArdDDH
