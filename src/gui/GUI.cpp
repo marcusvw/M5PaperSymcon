@@ -11,9 +11,6 @@
 static Page *pages[NUM_PAGES_MAX];
 static uint8_t pageCount = 0;
 static uint8_t currentChapter = 0;
-static bool t1 = false;
-static bool t2 = false;
-static bool t3 = false;
 static uint32_t lastActive = 0;
 static bool forceDownload = false;
 static uint32_t sleepTimeout = SLEEP_TIMEOUT_LONG;
