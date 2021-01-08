@@ -1,4 +1,4 @@
-# M5Core2Symcon
+# M5PaperSymcon
 Adurino Project using an M5Paper as Front End with IP Symcon
 # Dependecies
 HTTPClient
