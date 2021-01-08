@@ -1,16 +1,17 @@
-#include "PAG/PAG.h"
+
 #include "../rpc/RPC.h"
 #include "../ddh/DDH.h"
-#include "SLI/SLI.h"
 #include <ArduinoJson.h>
 #include "GUI.h"
 #include <M5EPD.h>
 #include <Preferences.h>
 #include "../wif/WIF.h"
 #include "BT4/BT4.h"
-static Page *pages[NUM_PAGES_MAX];
+#include "PAG/PAG.h"
+#include "DIS/DIS.h"
+#include "SLI/SLI.h"
+static Page *pages[NUM_CHAPTERS_MAX][NUM_PAGES];
 static uint8_t pageCount = 0;
-static uint8_t currentChapter = 0;
 static uint32_t lastActive = 0;
 static bool forceDownload = false;
 static uint32_t sleepTimeout = SLEEP_TIMEOUT_LONG;
@@ -18,6 +19,9 @@ static String imgServer = "";
 static uint32_t confVers = 0;
 static uint32_t touchReleaseCounter = 0;
 static uint32_t notAvailableCounter = 0;
+static uint8_t chapterCount=0;
+static uint8_t currentChapter=0;
+bool cachedUpdate=true;
 PAG_pos_t dummyPos = {-1, -1};
 PAG_pos_t positionTemplate[NUM_PAGES] = {{PAGE_WIDTH * 0, (PAGE_HEIGHT * 0) + OFFSET_Y}, {PAGE_WIDTH * 1, (PAGE_HEIGHT * 0) + OFFSET_Y}, {PAGE_WIDTH * 2, (PAGE_HEIGHT * 0) + OFFSET_Y}, {PAGE_WIDTH * 0, (PAGE_HEIGHT * 1) + OFFSET_Y + PAGE_PADDING_Y}, {PAGE_WIDTH * 1, (PAGE_HEIGHT * 1) + OFFSET_Y + PAGE_PADDING_Y}, {PAGE_WIDTH * 2, (PAGE_HEIGHT * 1) + OFFSET_Y + PAGE_PADDING_Y}};
 Preferences GUI__preferences;
@@ -29,9 +33,12 @@ void GUI_Init()
     String config = JsonRPC::init();
     DynamicJsonDocument doc(20000);
     DeserializationError error = deserializeJson(doc, config);
+    for(uint32_t y;y<NUM_CHAPTERS_MAX;y++)
+    {
     for (uint32_t x; x < NUM_PAGES_MAX; x++)
     {
-        pages[x] = NULL;
+        pages[y][x] = NULL;
+    }
     }
     // Test if parsing succeeds.
     if (error)
@@ -82,6 +89,8 @@ void GUI_Init()
     Serial.printf("M2I INF Number of Config Elemenets:%d\r\n", elCount);
     uint32_t x;
     uint32_t pageIndex = 0;
+    uint32_t interPagerCounter=0;
+    uint32_t interChapterCounter=0;
     for (x = 0; x < elCount; x++)
     {
 
@@ -92,39 +101,95 @@ void GUI_Init()
         if (type == "SLI")
         {
             Serial.printf("GUI INF SLI Config: %s %s %s\r\n", doc["elements"][x]["image1"].as<String>().c_str(), doc["elements"][x]["id"].as<String>().c_str(), doc["elements"][x]["factor"].as<String>().c_str());
-            pages[pageCount] = new SliderPage((JsonObject)(doc["elements"][x]), positionTemplate[pageIndex],useSDCard);
+            pages[interChapterCounter][interPagerCounter] = new SliderPage((JsonObject)(doc["elements"][x]), positionTemplate[interPagerCounter],useSDCard);
             pageCount++;
         }
         // Type is 4 Button Page
         else if (type == "BT4")
         {
             Serial.printf("GUI INF B4T Config: %s \r\n", doc["elements"][x]["head"].as<String>().c_str());
-            pages[pageCount] = new Button4Page((JsonObject)(doc["elements"][x]), positionTemplate[pageIndex],useSDCard);
+            pages[interChapterCounter][interPagerCounter] = new Button4Page((JsonObject)(doc["elements"][x]), positionTemplate[interPagerCounter],useSDCard);
             pageCount++;
         }
-        pageIndex++;
-        if (pageIndex > NUM_PAGES)
+          else if (type == "DIS")
         {
-            pageIndex = 0;
+            Serial.printf("GUI INF DIS Config: %s \r\n", doc["elements"][x]["head"].as<String>().c_str());
+            pages[interChapterCounter][interPagerCounter] = new DisplayPage((JsonObject)(doc["elements"][x]), positionTemplate[interPagerCounter],useSDCard);
+            pageCount++;
         }
+        interPagerCounter=pageCount%NUM_PAGES;
+        interChapterCounter=pageCount/NUM_PAGES;      
     }
+    chapterCount=(interChapterCounter+1);
     
     /***
      * Activate page 0 and render header
      **/
-
+    cachedUpdate=true;
+    M5.EPD.Clear(false);
     for (uint32_t x; x < NUM_PAGES; x++)
     {
-        if (pages[x] != NULL)
+        if (pages[0][x] != NULL)
         {
-            pages[x]->activate();
+            pages[0][x]->activate();
         }
     }
+     M5.EPD.UpdateFull(UPDATE_MODE_GC16);
+    cachedUpdate=false;
     pos.x = -1;
     pos.y = -1;
 }
 
+void GUI_switchChapter(bool dir)
+{
+    uint8_t oldChapter=currentChapter;
+    if(dir==CHAPTER_UP)
+    {
+        currentChapter++;
+        if(currentChapter==chapterCount)
+        {
+            currentChapter=0;
+        }
+    }
+    else /*chapter down*/
+    {
+        if(currentChapter==0)
+        {
+            currentChapter=chapterCount-1;
+        }
+        else
+        {
+            currentChapter--;
+        }
+        
+    }
+    cachedUpdate=true;
+    for(uint8_t x=0;x<NUM_PAGES;x++)
+    {
+         if (pages[oldChapter][x] != NULL)
+        {
+            pages[oldChapter][x]->deActivate();
+        }
+    }
+    M5.EPD.Clear(false);
+    for(uint8_t x=0;x<NUM_PAGES;x++)
+    {
+         if (pages[currentChapter][x] != NULL)
+        {
+            Serial.printf("GUI INF Start Update Page %d\r\n", x);
+            pages[currentChapter][x]->activate();
+            Serial.print("GUI INF Update finihsed\r\n");
+        }
+    }
+    M5.EPD.UpdateFull(UPDATE_MODE_GC16);
+    cachedUpdate=false;
+    
 
+}
+bool GUI_cachedUpdate()
+{
+    return(cachedUpdate);
+}
 
 void GUI_Loop()
 {
@@ -191,13 +256,13 @@ void GUI_Loop()
     }
     for (int x = 0; x < NUM_PAGES; x++)
     {
-        if (pages[x] != NULL)
+        if (pages[currentChapter][x] != NULL)
         {
 
             if (pos.x == -1)
             {
 
-                pages[x]->handleInput(dummyPos);
+                pages[currentChapter][x]->handleInput(dummyPos);
             }
             else
             {
@@ -208,11 +273,11 @@ void GUI_Loop()
                     PAG_pos_t locPos = pos;
                     locPos.x -= positionTemplate[x].x;
                     locPos.y -= positionTemplate[x].y;
-                    pages[x]->handleInput(locPos);
+                    pages[currentChapter][x]->handleInput(locPos);
                 }
                 else
                 {
-                    pages[x]->handleInput(dummyPos);
+                    pages[currentChapter][x]->handleInput(dummyPos);
                 }
             }
         }
@@ -252,11 +317,11 @@ bool GUI__checkButtons()
 {
     if (M5.BtnL.wasPressed())
     {
-        Serial.printf("BtnL wasPressed!");
+        GUI_switchChapter(CHAPTER_DOWN);
     }
     if (M5.BtnR.wasPressed())
     {
-        Serial.printf("BtnR wasPressed!");
+        GUI_switchChapter(CHAPTER_UP);
     }
     M5.update();
 }

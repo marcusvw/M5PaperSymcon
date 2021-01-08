@@ -16,3 +16,6 @@
 [submodule "src/ddh"]
 	path = src/ddh
 	url = git@github.com:marcusvw/ArdDDH
+[submodule "src/gui/DIS"]
+	path = src/gui/DIS
+	url = git@github.com:marcusvw/GUIDIS.git

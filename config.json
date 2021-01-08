@@ -1,61 +1,142 @@
 {
-    "version": 2,
-    "sleepTimeout": 15000,
-    "hostname":"M5Paper1",
-    "useSDCard": false,
-    "imagesrv": "http://192.168.88.6:3777/user/image/",
-    "elements": [
-        {
-            "type": "SLI",
-            "head": "Wohnzimmer Licht",
-            "id": "23061",
-            "factor": 2.5,
-            "image2": "/ed_living.bmp",
-            "image1": "/ed_on.bmp"
-        },
-        {
-            "type": "SLI",
-            "head": "Kuechen Licht",
-            "id": "55865",
-            "factor": 2.5,
-            "image2": "/ed_kitchen.bmp",
-            "image1": "/ed_on.bmp"
-        },
-        {
-            "type": "SLI",
-            "head": "Schlafzimmer Licht",
-            "id": "54503",
-            "factor": 2.5,
-            "image2": "/ed_bed.bmp",
-            "image1": "/ed_on.bmp"
-        },
-        {
-            "type": "BT4",
-            "head": "Schalter",
-            "ids": [
-                "40628",
-                "38587",
-                "15437",
-                "12145"
-            ],
-            "imagesOn": [
-                "/onCaf.bmp",
-                "/onAuto.bmp",
-                "/onBed.bmp",
-                "/onKitchen.bmp"
-            ],
-            "imagesOff": [
-                "/offCaf.bmp",
-                "/offAuto.bmp",
-                "/offBed.bmp",
-                "/offKitchen.bmp"
-            ],
-            "varOnly": [
-                false,
-                true,
-                false,
-                false
-            ]
-        }
-    ]
+  "version": 2,
+  "sleepTimeout": 15000,
+  "hostname": "M5Paper1",
+  "useSDCard": false,
+  "imagesrv": "http://192.168.88.6:3777/user/image/",
+  "elements": [
+    {
+      "type": "SLI",
+      "head": "Wohnzimmer Licht",
+      "id": "23061",
+      "factor": 2.5,
+      "image2": "/ed_living.bmp",
+      "image1": "/ed_on.bmp"
+    },
+    {
+      "type": "SLI",
+      "head": "Kuechen Licht",
+      "id": "55865",
+      "factor": 2.5,
+      "image2": "/ed_kitchen.bmp",
+      "image1": "/ed_on.bmp"
+    },
+    {
+      "type": "SLI",
+      "head": "Schlafzimmer Licht",
+      "id": "54503",
+      "factor": 2.5,
+      "image2": "/ed_bed.bmp",
+      "image1": "/ed_on.bmp"
+    },
+    {
+      "type": "BT4",
+      "head": "Schalter",
+      "ids": ["40628", "38587", "15437", "12145"],
+      "imagesOn": [
+        "/ed_c_on.bmp",
+        "/ed_a_on.bmp",
+        "/ed_b_on.bmp",
+        "/ed_k_on.bmp"
+      ],
+      "imagesOff": [
+        "/ed_c_off.bmp",
+        "/ed_a_off.bmp",
+        "/ed_b_off.bmp",
+        "/ed_k_off.bmp"
+      ],
+      "varOnly": [false, true, false, false]
+    },
+    {
+      "type": "DIS",
+      "head": "Messwerte 1",
+      "ids": ["50745", "40435", "13456", "24841"],
+      "images": ["/ed_temp.bmp", "/ed_hum.bmp", "/ed_lux.bmp", "/ed_in.bmp"],
+      "label": ["Wohnzimmer Temp", "Wz Hum", "Wz Helligkeit", "Kueche Temp"],
+      "format": ["%2.2fC", "%2.2f%%", "%3.1flux", "%2.2fC"],
+      "types": [0, 0, 0, 0]
+    },
+    {
+      "type": "DIS",
+      "head": "Messwerte 2",
+      "ids": ["50745", "40435", "13456", "24841"],
+      "images": ["/ed_temp.bmp", "/ed_hum.bmp", "/ed_lux.bmp", "/ed_in.bmp"],
+      "label": ["Wohnzimmer Temp", "Wz Hum", "Wz Helligkeit", "Kueche Temp"],
+      "format": ["%2.2fC", "%2.2f%%", "%3.1flux", "%2.2fC"],
+      "types": [0, 0, 0, 0]
+    },
+    {
+      "type": "DIS",
+      "head": "Messwerte 3",
+      "ids": ["50745", "40435", "13456", "24841"],
+      "images": ["/ed_temp.bmp", "/ed_hum.bmp", "/ed_lux.bmp", "/ed_in.bmp"],
+      "label": ["Wohnzimmer Temp", "Wz Hum", "Wz Helligkeit", "Kueche Temp"],
+      "format": ["%2.2fC", "%2.2f%%", "%3.1flux", "%2.2fC"],
+      "types": [0, 0, 0, 0]
+    },
+    {
+      "type": "DIS",
+      "head": "Messwerte 4",
+      "ids": ["50745", "40435", "13456", "24841"],
+      "images": ["/ed_temp.bmp", "/ed_hum.bmp", "/ed_lux.bmp", "/ed_in.bmp"],
+      "label": ["Wohnzimmer Temp", "Wz Hum", "Wz Helligkeit", "Kueche Temp"],
+      "format": ["%2.2fC", "%2.2f%%", "%3.1flux", "%2.2fC"],
+      "types": [0, 0, 0, 0]
+    },
+    {
+      "type": "DIS",
+      "head": "Messwerte 5",
+      "ids": ["50745", "40435", "13456", "24841"],
+      "images": ["/ed_temp.bmp", "/ed_hum.bmp", "/ed_lux.bmp", "/ed_in.bmp"],
+      "label": ["Wohnzimmer Temp", "Wz Hum", "Wz Helligkeit", "Kueche Temp"],
+      "format": ["%2.2fC", "%2.2f%%", "%3.1flux", "%2.2fC"],
+      "types": [0, 0, 0, 0]
+    },
+    {
+      "type": "DIS",
+      "head": "Messwerte 6",
+      "ids": ["50745", "40435", "13456", "24841"],
+      "images": ["/ed_temp.bmp", "/ed_hum.bmp", "/ed_lux.bmp", "/ed_in.bmp"],
+      "label": ["Wohnzimmer Temp", "Wz Hum", "Wz Helligkeit", "Kueche Temp"],
+      "format": ["%2.2fC", "%2.2f%%", "%3.1flux", "%2.2fC"],
+      "types": [0, 0, 0, 0]
+    },
+    {
+      "type": "DIS",
+      "head": "Messwerte 7",
+      "ids": ["50745", "40435", "13456", "24841"],
+      "images": ["/ed_temp.bmp", "/ed_hum.bmp", "/ed_lux.bmp", "/ed_in.bmp"],
+      "label": ["Wohnzimmer Temp", "Wz Hum", "Wz Helligkeit", "Kueche Temp"],
+      "format": ["%2.2fC", "%2.2f%%", "%3.1flux", "%2.2fC"],
+      "types": [0, 0, 0, 0]
+    },
+    {
+      "type": "DIS",
+      "head": "Messwerte 8",
+      "ids": ["50745", "40435", "13456", "24841"],
+      "images": ["/ed_temp.bmp", "/ed_hum.bmp", "/ed_lux.bmp", "/ed_in.bmp"],
+      "label": ["Wohnzimmer Temp", "Wz Hum", "Wz Helligkeit", "Kueche Temp"],
+      "format": ["%2.2fC", "%2.2f%%", "%3.1flux", "%2.2fC"],
+      "types": [0, 0, 0, 0]
+    },
+
+    {
+      "type": "DIS",
+      "head": "Messwerte 9",
+      "ids": ["50745", "40435", "13456", "24841"],
+      "images": ["/ed_temp.bmp", "/ed_hum.bmp", "/ed_lux.bmp", "/ed_in.bmp"],
+      "label": ["Wohnzimmer Temp", "Wz Hum", "Wz Helligkeit", "Kueche Temp"],
+      "format": ["%2.2fC", "%2.2f%%", "%3.1flux", "%2.2fC"],
+      "types": [0, 0, 0, 0]
+    },
+    {
+      "type": "DIS",
+      "head": "Messwerte 10",
+      "ids": ["50745", "40435", "13456", "24841"],
+      "images": ["/ed_temp.bmp", "/ed_hum.bmp", "/ed_lux.bmp", "/ed_in.bmp"],
+      "label": ["Wohnzimmer Temp", "Wz Hum", "Wz Helligkeit", "Kueche Temp"],
+      "format": ["%2.2fC", "%2.2f%%", "%3.1flux", "%2.2fC"],
+      "types": [0, 0, 0, 0]
+    }
+  ]
 }
